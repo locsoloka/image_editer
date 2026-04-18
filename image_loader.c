@@ -1,10 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <file_types/bmp.h>
+#include "file_types/bmp.h"
 
-
-int open_bmp(char *path)
+int open_bmp(char *path,int *width,int *height,RGBTRIPLE **out_texture)
 {
     BITMAPFILEHEADER bf;
     BITMAPINFOHEADER bi;
@@ -18,31 +17,22 @@ int open_bmp(char *path)
     fread(&bf, sizeof(BITMAPFILEHEADER), 1, infile);
     fread(&bi, sizeof(BITMAPINFOHEADER), 1, infile);
 
-    int width  = abs(bi.biWidth);
-    int height = bi.biHeight;
+    *width  = abs(bi.biWidth);
+    *height = abs(bi.biHeight);
 
-    RGBTRIPLE (*image)[width] = calloc(height, width * sizeof(RGBTRIPLE));
-    if (image == NULL)
-    {
-        fclose(infile);
-        return 2;
-    }
+    RGBTRIPLE (*image_ptr) = calloc(*height, *width * sizeof(RGBTRIPLE));
 
-    int padding = (4 - (width * sizeof(RGBTRIPLE)) % 4) % 4;
+    int padding = (4 - (*width * sizeof(RGBTRIPLE)) % 4) % 4;
 
-    for (int i = 0; i < height; i++)
-    {
-        // Read row into pixel array
-        fread(image[i], sizeof(RGBTRIPLE), width, infile);
-
-        // Skip over padding
+    printf("width: %i\n", *width);
+    printf("height: %i\n", *height);
+    printf("padding: %i\n", padding);
+    for (int i = 0; i < *height; i++)
+    {   
+        fread(&image_ptr[i * (*width)], sizeof(RGBTRIPLE), *width, infile);
         fseek(infile, padding, SEEK_CUR);
     }
+    fclose(infile);
+    *out_texture = image_ptr;
+    return 0;
 }
-
-int load_bmp(char *path)
-{
-    fopen(path, "r");
-    
-}
-
