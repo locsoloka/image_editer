@@ -48,8 +48,6 @@ int main(void)
 
     SDL_UpdateTexture(texture, NULL, out_texture, width * sizeof(RGBTRIPLE));
     
-    char *buffer;
-
     SDL_Event e;
     
     pthread_t thread_id;

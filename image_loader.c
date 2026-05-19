@@ -21,7 +21,7 @@ int open_bmp(char *path,int *width,int *height, RGB **out_texture)
     *width  = abs(bi.biWidth);
     *height = abs(bi.biHeight);
 
-    RGBTRIPLE (*image_ptr) = calloc(*height, *width * sizeof(RGBTRIPLE));
+    RGB (*image_ptr) = calloc(*height, *width * sizeof(RGB));
 
     int padding = (4 - (*width * sizeof(RGBTRIPLE)) % 4) % 4;
 
