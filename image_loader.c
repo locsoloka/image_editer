@@ -2,8 +2,9 @@
 #include <stdlib.h>
 
 #include "file_types/bmp.h"
+#include "file_types/raw_image.h"
 
-int open_bmp(char *path,int *width,int *height,RGBTRIPLE **out_texture)
+int open_bmp(char *path,int *width,int *height, RGB **out_texture)
 {
     BITMAPFILEHEADER bf;
     BITMAPINFOHEADER bi;

@@ -1,4 +1,7 @@
 // BMP-related data types based on Microsoft's own
+#ifndef BMP_H_DEFINED
+#define BMP_H_DEFINED
+
 
 #include <stdint.h>
 
@@ -55,3 +58,5 @@ typedef struct
     BYTE  rgbtRed;
 } __attribute__((__packed__))
 RGBTRIPLE;
+
+#endif

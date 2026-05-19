@@ -1,13 +1,24 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
+#include <pthread.h>
+
 
 //#include "file_types/bmp.h"
 
 #include "image_loader.h"
+#include "file_types/history.h"
+#include "file_types/raw_image.h"
+#include "processors/filters.h"
+
+
 int width = 0;
 int height = 0;
+int running = 1;
 
-RGBTRIPLE (*out_texture) = NULL;
+RGB (*out_texture) = NULL;
+
+void* input_thread(void *);
+
 
 int main(void)
 {
@@ -37,8 +48,15 @@ int main(void)
 
     SDL_UpdateTexture(texture, NULL, out_texture, width * sizeof(RGBTRIPLE));
     
-    int running = 1;
+    char *buffer;
+
     SDL_Event e;
+    
+    pthread_t thread_id;
+    if (pthread_create(&thread_id, NULL, input_thread, NULL) != 0) {
+        fprintf(stderr, "Nem sikerult letrehozni a szalat\n");
+    }
+
     while (running)
     {
         while (SDL_PollEvent(&e))
@@ -62,4 +80,34 @@ int main(void)
     free(user_path);
 
     return 0;
+}
+
+void* input_thread(void *)
+{
+    printf("input: \n");
+    char command;
+
+    while (running)
+    {
+        command = getchar();
+
+        if (command == '\n' || command == EOF)
+        {
+            continue;
+        }
+        
+        switch (command)
+        {
+        case 'q':
+            running = 0;
+            break;
+        
+        case 'g':
+            
+            break;
+        }
+
+    }
+
+    return NULL;
 }
