@@ -8,17 +8,19 @@
 #include "image_loader.h"
 #include "file_types/history.h"
 #include "file_types/raw_image.h"
-#include "processors/filters.h"
+#include "filter/filters.h"
 
 
 int width = 0;
 int height = 0;
 int running = 1;
 
+int texture_needs_update = 0;
+
 RGB (*out_texture) = NULL;
+SDL_Texture *texture = NULL;
 
 void* input_thread(void *);
-
 
 int main(void)
 {
@@ -40,13 +42,13 @@ int main(void)
     SDL_Window* window = SDL_CreateWindow("C grafika", 100,100,640,480,0);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-    SDL_Texture *texture = SDL_CreateTexture(renderer,
+    texture = SDL_CreateTexture(renderer,
                     SDL_PIXELFORMAT_BGR24,
                     SDL_TEXTUREACCESS_STATIC,
                     width,height);
     printf("texture_created \n");
 
-    SDL_UpdateTexture(texture, NULL, out_texture, width * sizeof(RGBTRIPLE));
+    SDL_UpdateTexture(texture, NULL, out_texture, width * sizeof(RGB));
     
     SDL_Event e;
     
@@ -64,6 +66,13 @@ int main(void)
                 running = 0;
             }
         }
+        
+        if (texture_needs_update)
+        {
+            SDL_UpdateTexture(texture, NULL, out_texture, width * sizeof(RGB));
+            texture_needs_update = 0; // Visszaállítjuk, mert elvégeztük a munkát
+        }
+        
         SDL_RenderClear(renderer);
         SDL_RenderCopy(renderer, texture, NULL, NULL);
         SDL_RenderPresent(renderer);
@@ -101,7 +110,8 @@ void* input_thread(void *)
             break;
         
         case 'g':
-            
+            grayscale(height, width, out_texture);
+            texture_needs_update++;
             break;
         }
 
