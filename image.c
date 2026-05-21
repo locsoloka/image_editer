@@ -1,6 +1,8 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <stdlib.h>
+#include <string.h>
 
 
 //#include "file_types/bmp.h"
@@ -21,6 +23,8 @@ RGB (*out_texture) = NULL;
 SDL_Texture *texture = NULL;
 
 void* input_thread(void *);
+
+void gray_scale_switch(void);
 
 int main(void)
 {
@@ -89,7 +93,7 @@ int main(void)
     return 0;
 }
 
-void* input_thread(void *)
+void* input_thread(void *arg)
 {
     printf("input: \n");
     char command;
@@ -110,49 +114,56 @@ void* input_thread(void *)
             break;
         
         case 'g':
-            printf("\n GRAYSCALE --config --help or e\n");
-
-            {
-                int c;
-                while ((c = getchar()) != '\n' && c != EOF);
-            }
-
-            char sub_command[100];
-            fflush(stdout);
-
-            if (fgets(sub_command, sizeof(sub_command), stdin) != NULL)
-            {
-                float strength = 1;
-                sub_command[strcspn(sub_command, "\n")] = 0;
-
-                if (strcmp(sub_command, "--help") == 0)
-                {
-                    printf("execute: press: e\n");
-                    printf("change: strength: --config -s\n");
-                }
-                else if (strcmp(sub_command, "--config -s") == 0)
-                {
-                    printf("strength: ");
-                    scanf("%f", &strength);
-                    
-                    grayscale(height, width, out_texture, strength);
-                    texture_needs_update++;
-                }
-                else if (strcmp(sub_command, "e") == 0)
-                {
-                    grayscale(height, width, out_texture, strength);
-                    texture_needs_update++;                    
-                }
-                else
-                {
-                    printf("command not found\n");
-                }
-
-            }
-                break;
+            gray_scale_switch();
+            break;
+        
+        case 's':
+            sepia(height, width, out_texture, 1);       
+            texture_needs_update++;
+            break;
         }
+    }
+    
+    return NULL;
+}
+void gray_scale_switch(void)
+{
+    printf("\n GRAYSCALE --help or e\n");
 
+    {
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF);
     }
 
-    return NULL;
+    char sub_command[100];
+    fflush(stdout);
+
+    if (fgets(sub_command, sizeof(sub_command), stdin) != NULL)
+    {
+        float strength = 1;
+        sub_command[strcspn(sub_command, "\n")] = 0;
+
+        if (strcmp(sub_command, "--help") == 0)
+        {
+            printf("execute: press: e\n");
+            printf("change: strength: --config -s\n");
+        }
+        else if (strcmp(sub_command, "--config -s") == 0)
+        {
+            printf("strength: ");
+            scanf("%f", &strength);
+            
+            grayscale(height, width, out_texture, strength);
+            texture_needs_update++;
+        }
+        else if (strcmp(sub_command, "e") == 0)
+        {
+            grayscale(height, width, out_texture, strength);
+            texture_needs_update++;                    
+        }
+        else
+        {
+            printf("command not found\n");
+        }
+    }
 }
