@@ -110,9 +110,46 @@ void* input_thread(void *)
             break;
         
         case 'g':
-            grayscale(height, width, out_texture);
-            texture_needs_update++;
-            break;
+            printf("\n GRAYSCALE --config --help or e\n");
+
+            {
+                int c;
+                while ((c = getchar()) != '\n' && c != EOF);
+            }
+
+            char sub_command[100];
+            fflush(stdout);
+
+            if (fgets(sub_command, sizeof(sub_command), stdin) != NULL)
+            {
+                float strength = 1;
+                sub_command[strcspn(sub_command, "\n")] = 0;
+
+                if (strcmp(sub_command, "--help") == 0)
+                {
+                    printf("execute: press: e\n");
+                    printf("change: strength: --config -s\n");
+                }
+                else if (strcmp(sub_command, "--config -s") == 0)
+                {
+                    printf("strength: ");
+                    scanf("%f", &strength);
+                    
+                    grayscale(height, width, out_texture, strength);
+                    texture_needs_update++;
+                }
+                else if (strcmp(sub_command, "e") == 0)
+                {
+                    grayscale(height, width, out_texture, strength);
+                    texture_needs_update++;                    
+                }
+                else
+                {
+                    printf("command not found\n");
+                }
+
+            }
+                break;
         }
 
     }
