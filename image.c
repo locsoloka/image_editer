@@ -121,6 +121,9 @@ void* input_thread(void *arg)
             sepia(height, width, out_texture, 1);       
             texture_needs_update++;
             break;
+        case 'b':
+            blur(height, width, out_texture, 1);       
+            texture_needs_update++;
         }
     }
     

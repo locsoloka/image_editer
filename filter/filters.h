@@ -5,4 +5,5 @@
 
 void grayscale(int height, int width, RGB *image, float strength);
 void sepia(int height, int width, RGB *image, float strength);
+void blur(int height, int width, RGB *image, float strength);
 #endif
