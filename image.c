@@ -3,7 +3,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <stdbool.h>
 
 //#include "file_types/bmp.h"
 
@@ -17,7 +17,7 @@ int width = 0;
 int height = 0;
 int running = 1;
 
-int texture_needs_update = 0;
+bool texture_needs_update = false;
 
 RGB (*out_texture) = NULL;
 SDL_Texture *texture = NULL;
@@ -74,7 +74,7 @@ int main(void)
         if (texture_needs_update)
         {
             SDL_UpdateTexture(texture, NULL, out_texture, width * sizeof(RGB));
-            texture_needs_update = 0; // Visszaállítjuk, mert elvégeztük a munkát
+            texture_needs_update = false; // Visszaállítjuk, mert elvégeztük a munkát
         }
         
         SDL_RenderClear(renderer);
@@ -119,11 +119,16 @@ void* input_thread(void *arg)
         
         case 's':
             sepia(height, width, out_texture, 1);       
-            texture_needs_update++;
+            texture_needs_update = true;
             break;
         case 'b':
             blur(height, width, out_texture, 1);       
-            texture_needs_update++;
+            texture_needs_update = true;
+            break;
+        case 'm':
+            mirror_horizontal(height, width, out_texture, 1);
+            texture_needs_update = true;
+            break;
         }
     }
     
@@ -157,12 +162,12 @@ void gray_scale_switch(void)
             scanf("%f", &strength);
             
             grayscale(height, width, out_texture, strength);
-            texture_needs_update++;
+            texture_needs_update = true;
         }
         else if (strcmp(sub_command, "e") == 0)
         {
             grayscale(height, width, out_texture, strength);
-            texture_needs_update++;                    
+            texture_needs_update = true;                    
         }
         else
         {
