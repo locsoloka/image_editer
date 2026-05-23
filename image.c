@@ -25,6 +25,7 @@ SDL_Texture *texture = NULL;
 void* input_thread(void *);
 
 void gray_scale_switch(void);
+void sepia_switch(void);
 
 int main(void)
 {
@@ -118,12 +119,10 @@ void* input_thread(void *arg)
             break;
         
         case 's':
-            sepia(height, width, out_texture, 1);       
-            texture_needs_update = true;
+            sepia_switch();
             break;
         case 'b':
             blur(height, width, out_texture, 1);       
-            texture_needs_update = true;
             break;
         case 'm':
             mirror_horizontal(height, width, out_texture, 1);
@@ -137,7 +136,8 @@ void* input_thread(void *arg)
 void gray_scale_switch(void)
 {
     printf("\n GRAYSCALE --help or e\n");
-
+    
+    // we need this or else it would execute it self without user input
     {
         int c;
         while ((c = getchar()) != '\n' && c != EOF);
@@ -172,6 +172,47 @@ void gray_scale_switch(void)
         else
         {
             printf("command not found\n");
+        }
+    }
+}
+void sepia_switch(void)
+{
+    printf("--help or e\n");
+    float strength = 1;    
+    // we need this or else it would execute it self without user input
+    {
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF);
+    }
+
+    char sub_command[100];
+    fflush(stdout);
+
+    if (fgets(sub_command, sizeof(sub_command), stdin) != NULL)
+    {
+        // we remove /n from the end
+        sub_command[strcspn(sub_command, "\n")] = 0;
+        if (strcmp(sub_command, "--help") == 0)
+        {
+            printf("Configure strenth: --config -s\n");
+            printf("default: e\n");
+        }
+        else if (strcmp(sub_command, "e") == 0)
+        {
+            sepia(height, width, out_texture, strength);       
+            texture_needs_update = true;
+        }
+        else if (strcmp(sub_command, "--config -s") == 0)
+        {
+            printf("strength: ");
+            scanf("%f", &strength);
+            sepia(height, width, out_texture, strength);       
+            texture_needs_update = true;
+            
+        }
+        else
+        {
+            printf("\ncommand not found\n");
         }
     }
 }

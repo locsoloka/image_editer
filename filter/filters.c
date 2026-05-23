@@ -39,9 +39,9 @@ void sepia(int height, int width, RGB *image, float strength)
       double G = image[index].rgbtGreen;
       double B = image[index].rgbtBlue;
 
-      int sepiaRed   = round( .393 * R + .769 * G + .189 * B);
-      int sepiaGreen = round( .349 * R + .686 * G + .168 * B);
-      int sepiaBlue  = round( .272 * R + .534 * G + .131 * B);
+      int sepiaRed   = round((1 - strength) * R + strength * (.393 * R + .769 * G + .189 * B));
+      int sepiaGreen = round((1 - strength) * G + strength * (.349 * R + .686 * G + .168 * B));
+      int sepiaBlue  = round((1 - strength) * B + strength * (.272 * R + .534 * G + .131 * B));
 
       if (sepiaRed > 255)   sepiaRed = 255;
       if (sepiaGreen > 255) sepiaGreen = 255;
@@ -56,10 +56,6 @@ void sepia(int height, int width, RGB *image, float strength)
 
 void mirror_horizontal(int height, int width, RGB *image, float strength)
 {
-    int temp;
-    int a;
-    int b;
-
     for (int y = 0;y < height;y++)
     {
         for (int x = 0 ; x < width / 2;x++)
