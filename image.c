@@ -15,7 +15,7 @@
 
 int width = 0;
 int height = 0;
-int running = 1;
+bool running = true;
 
 bool texture_needs_update = false;
 
@@ -68,7 +68,7 @@ int main(void)
         {
             if (e.type == SDL_QUIT)
             {
-                running = 0;
+                running = false;
             }
         }
         
@@ -111,7 +111,7 @@ void* input_thread(void *arg)
         switch (command)
         {
         case 'q':
-            running = 0;
+            running = false;
             break;
         
         case 'g':
