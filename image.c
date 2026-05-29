@@ -34,7 +34,7 @@ int main(void)
     char *user_path = calloc(100, sizeof(char));
     scanf("%s", user_path);
 
-    int status = open_bmp(user_path ,&width, &height, &out_texture);
+    int status = open_png(user_path ,&width, &height, &out_texture);
     if (status != 0)
     {
         printf("%i\n", status);
@@ -123,6 +123,7 @@ void* input_thread(void *arg)
             break;
         case 'b':
             blur(height, width, out_texture, 1);       
+            texture_needs_update = true;
             break;
         case 'm':
             mirror_horizontal(height, width, out_texture, 1);
@@ -152,8 +153,7 @@ void gray_scale_switch(void)
         sub_command[strcspn(sub_command, "\n")] = 0;
 
         if (strcmp(sub_command, "--help") == 0)
-        {
-            printf("execute: press: e\n");
+        { printf("execute: press: e\n");
             printf("change: strength: --config -s\n");
         }
         else if (strcmp(sub_command, "--config -s") == 0)
