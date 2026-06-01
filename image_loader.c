@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 #include "file_types/bmp.h"
 #include "file_types/raw_image.h"
@@ -41,10 +42,10 @@ int open_bmp(char *path,int *width,int *height, RGB **out_texture)
     return 0;
 }
 
-uint32_t read_be32(FILE *f)
+uint32_t read_be32(FILE *infile)
 {
     uint8_t b[4];
-    fread(b, 1, 4, f);
+    fread(b, 1, 4, infile);
 
     return ((uint32_t)b[0] << 24) |
            ((uint32_t)b[1] << 16) |
@@ -52,36 +53,84 @@ uint32_t read_be32(FILE *f)
            ((uint32_t)b[3]);
 }
 
-int read_png_header(PNG_IHDR *IHDR)
-  {
+uint8_t read_be8(FILE *infile)
+{
+  uint8_t value;
+  fread(&value, sizeof(uint8_t), 1, infile);
+  return value;
+}
+
+int read_png_header(PNG_IHDR *IHDR, FILE *infile)
+{
+    // goto the end of the "IHDR"
+    fseek(infile, 16, SEEK_SET);
     
-  }
+    // read header
+    IHDR->width  = read_be32(infile);
+    IHDR->height = read_be32(infile);
+
+    IHDR->bit_depth           = read_be8(infile);
+    IHDR->color_type          = read_be8(infile);
+    IHDR->compression_method  = read_be8(infile);
+    IHDR->filter_method       = read_be8(infile);
+    IHDR->interlace_method    = read_be8(infile);
+
+    printf("%u\n", IHDR->width);
+    printf("%u\n", IHDR->height);
+    
+    printf("%i\n", IHDR->bit_depth);
+    printf("%i\n", IHDR->color_type);
+    printf("%i\n", IHDR->compression_method);
+    printf("%i\n", IHDR->filter_method);
+    printf("%i\n", IHDR->interlace_method);
+    
+    if (IHDR->compression_method != 0)
+    {
+      printf("unsuported compression_method");
+      return 1;
+    }
+    return 0;
+}
 
 int open_png(char *path,int *width,int *height, RGB **out_texture)
 {
-    FILE (*image_ptr) = fopen(path, "rb");
     PNG_IHDR IHDR;
-     // goto IHDR end
-    fseek(image_ptr, 16, SEEK_SET);
-    
-    // read every part of the header
-    
-    IHDR.width  = read_be32(image_ptr);
-    IHDR.height = read_be32(image_ptr);
+    uint32_t length;
+    char chunk_type[5];
 
-    fread(&IHDR.bit_depth, sizeof(uint8_t), 1, image_ptr);
-    fread(&IHDR.color_type, sizeof(uint8_t), 1, image_ptr);
-    fread(&IHDR.compression_method, sizeof(uint8_t), 1, image_ptr);
-    fread(&IHDR.filter_method, sizeof(uint8_t), 1, image_ptr);
-    fread(&IHDR.interlace_method,sizeof(uint8_t), 1, image_ptr);
+    chunk_type[4] = '\0';
+
+    FILE (*infile) = fopen(path, "rb");
+    read_png_header(&IHDR, infile);
+
+  RGB (*image_ptr) = calloc(*height, *width * sizeof(RGB));
     
-    printf("%u\n", IHDR.width);
-    printf("%u\n", IHDR.height);
+    while (true) 
+    {
+      if (fread(&length, 1, 4, infile) != 4)
+      {
+        length = ntohl(length);
+        printf("%i\n", length);
+        break;
+      }
+      length = ntohl(length);
+
+      fread(&chunk_type, 1, 4, infile);
+      if (strcmp(chunk_type, "IDAT") == 0)
+      {
+        printf("IDAT");
+      }
     
-    printf("%i\n", IHDR.bit_depth);
-    printf("%i\n", IHDR.color_type);
-    printf("%i\n", IHDR.compression_method);
-    printf("%i\n", IHDR.filter_method);
-    printf("%i\n", IHDR.interlace_method);
+      else if (strcmp(chunk_type, "IEND") == 0)
+      {
+        printf("IEND");
+        break;
+      }
+      else 
+      {
+        fseek(infile, length + 4, SEEK_CUR);
+      }
+    }
+
     return 0;
 }
