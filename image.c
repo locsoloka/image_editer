@@ -29,6 +29,7 @@ void sepia_switch(void);
 
 int main(void)
 {
+    // here i used ai for SDL2 functions
     SDL_Init(SDL_INIT_VIDEO);
 
     char *user_path = calloc(100, sizeof(char));
@@ -56,7 +57,7 @@ int main(void)
     SDL_UpdateTexture(texture, NULL, out_texture, width * sizeof(RGB));
     
     SDL_Event e;
-    
+    // i used ai for the multi threading beacuse I couldn' t figure out have multiple loops at once
     pthread_t thread_id;
     if (pthread_create(&thread_id, NULL, input_thread, NULL) != 0) {
         fprintf(stderr, "Nem sikerult letrehozni a szalat\n");

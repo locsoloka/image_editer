@@ -104,30 +104,27 @@ int open_png(char *path,int *width,int *height, RGB **out_texture)
     read_png_header(&IHDR, infile);
 
   RGB (*image_ptr) = calloc(*height, *width * sizeof(RGB));
-    
+    fseek(infile, 8, SEEK_CUR);
     while (true) 
     {
-      if (fread(&length, 1, 4, infile) != 4)
-      {
-        length = ntohl(length);
-        printf("%i\n", length);
-        break;
-      }
-      length = ntohl(length);
-
       fread(&chunk_type, 1, 4, infile);
+      printf("chunk_type: %s\n\n", chunk_type);
       if (strcmp(chunk_type, "IDAT") == 0)
       {
         printf("IDAT");
       }
-    
+      
       else if (strcmp(chunk_type, "IEND") == 0)
       {
         printf("IEND");
         break;
       }
+
       else 
       {
+        fread(&chunk_type, 1, 4, infile);
+        length = ntohl(length);
+        printf("length: %s", chunk_type);
         fseek(infile, length + 4, SEEK_CUR);
       }
     }
