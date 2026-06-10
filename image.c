@@ -5,9 +5,9 @@
 #include <string.h>
 #include <stdbool.h>
 
-//#include "file_types/bmp.h"
+#include "image_readers/png/png_loader.h"
+#include "image_readers/bmp/bmp_loader.h"
 
-#include "image_loader.h"
 #include "file_types/history.h"
 #include "file_types/raw_image.h"
 #include "filter/filters.h"
