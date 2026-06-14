@@ -9,6 +9,7 @@
                 "-g",
                 "${fileDirname}/*.c",
                 "${fileDirname}/filter/*.c",
+                "${fileDirname}/image_readers/*/*.c",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}",
                 "-lSDL2",
