@@ -44,43 +44,81 @@ int read_png_header(PNG_IHDR *IHDR, FILE *infile)
 
 int open_png(char *path,int *width,int *height, RGB **out_texture)
 {
-    PNG_IHDR IHDR;
-    uint32_t length;
-    char chunk_type[5];
+  PNG_IHDR IHDR;
+  uint32_t length;
+  char chunk_type[5];
 
-    chunk_type[4] = '\0';
+  int IDAT_count = 0;
+  uint32_t all_length;
+  chunk_type[4] = '\0';
 
-    FILE (*infile) = fopen(path, "rb");
-    read_png_header(&IHDR, infile);
+  uint8_t *IDAT_raw = NULL;
 
-    RGB (*image_ptr) = calloc(*height, *width * sizeof(RGB));
+  FILE (*infile) = fopen(path, "rb");
+  read_png_header(&IHDR, infile);
 
-    fseek(infile, 4, SEEK_CUR);
-
+  fseek(infile, 4, SEEK_CUR);
+  RGB (*image_ptr) = calloc(*height, *width * sizeof(RGB));
+  while (true)
+  {
     length = read_be32(infile); // read length
-
+    if (length == 0)
+    {
+      printf("length 0\n\n");
+      break;
+    }
     fread(&chunk_type, 1, 4, infile);
-
     printf("chunk_type: %s\n", chunk_type);
-
     printf("length: %u\n\n", length);
+
+    if (strcmp(chunk_type, "IEND") == 0)
+    {
+      printf("IEND");
+      break;
+    }
     if (strcmp(chunk_type, "IDAT") == 0)
     {
       printf("IDAT");
-      while (fread(image_ptr, 1, length, infile) == length);
-    }
-    
-    else if (strcmp(chunk_type, "IEND") == 0)
-    {
-      printf("IEND");
-    }
 
+      if (IDAT_count == 0) 
+      {
+        all_length = length;
+        IDAT_raw = calloc(length, sizeof(uint8_t));
+      }
+      else
+      {
+        all_length += length;
+        uint8_t *temp = realloc(IDAT_raw, all_length * sizeof(uint8_t));
+
+        if (temp == NULL) 
+        {
+          free(IDAT_raw);
+          return 1;
+        }
+        else
+        {
+          IDAT_raw = temp;
+          free(temp);
+        }
+      }
+
+      size_t read_data = fread(IDAT_raw, 1, length, infile);
+      if (read_data != length) 
+      {
+        printf("Wasnt't able to read IDAT");
+      }
+      else
+      {
+        IDAT_count++;
+      }
+    }
     else 
     {
-      length = read_be32(infile);
-      printf("length: %u", length);
-      fseek(infile, length + 4, SEEK_CUR);
+      fseek(infile, length, SEEK_CUR);
     }
-    *out_texture = image_ptr;
-    return 0;
+
+    fseek(infile, 4, SEEK_CUR);
+  }
+  *out_texture = image_ptr;
+  return 0;
 }
