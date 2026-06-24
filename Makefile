@@ -1,1 +1,1 @@
-gcc image.c image_readers/bmp/bmp_loader.c image_readers/png/png_loader.c image_readers/helpers/reader_functions.c  filter/filters.c -o file -Wall `pkg-config --cflags --libs sdl2` -lm
+gcc image.c image_readers/bmp/bmp_loader.c image_readers/png/png_loader.c image_readers/helpers/reader_functions.c  filter/filters.c zlib-1.3.2/libz.a -I./zlib-1.3.2 -o file -Wall `pkg-config --cflags --libs sdl2` -lm

@@ -5,10 +5,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../../zlib-1.3.2/zlib.h"
+
 #include "../../file_types/png.h"
 #include "../../file_types/raw_image.h"
 
 #include "../helpers/reader_functions.h"
+
+int bytes_per_pixel;
+uint32_t all_length;
 
 int read_png_header(PNG_IHDR *IHDR, FILE *infile)
 {
@@ -42,6 +47,50 @@ int read_png_header(PNG_IHDR *IHDR, FILE *infile)
     return 0;
 }
 
+int bytes_per_pixel_switch(PNG_IHDR IHDR)
+{
+  switch (IHDR.color_type)
+  {
+    case 0:
+    return 0; // greayscale
+    break;
+
+    case 2:
+    return 3; // RGB
+    break;
+
+    case 6:
+    return 4; // RGBA
+    break;
+
+  }
+  return 0;
+}
+
+int read_IDAT()
+{
+  
+}
+
+int  uncompress_png()
+{
+  uint8_t (*image_ptr) = calloc(all_length, sizeof(uint16_t));
+  if (image_ptr == NULL)
+  {
+    printf("couldn 't calloc enugh memory");
+  }
+  int state = uncompress(image_ptr, &destLen, IDAT_raw, all_length);
+  if (state == Z_OK)
+  {
+    printf("uncompress cussesfuly");
+  }
+  else
+  {
+    printf("error:%i\n", state);
+  }
+
+}
+
 int open_png(char *path,int *width,int *height, RGB **out_texture)
 {
   PNG_IHDR IHDR;
@@ -49,7 +98,6 @@ int open_png(char *path,int *width,int *height, RGB **out_texture)
   char chunk_type[5];
 
   int IDAT_count = 0;
-  uint32_t all_length;
   chunk_type[4] = '\0';
 
   uint8_t *IDAT_raw = NULL;
@@ -57,8 +105,11 @@ int open_png(char *path,int *width,int *height, RGB **out_texture)
   FILE (*infile) = fopen(path, "rb");
   read_png_header(&IHDR, infile);
 
+  bytes_per_pixel = bytes_per_pixel_switch(IHDR);
+
+  unsigned long destLen = *height * (1 + (*width * bytes_per_pixel));
+
   fseek(infile, 4, SEEK_CUR);
-  RGB (*image_ptr) = calloc(*height, *width * sizeof(RGB));
   while (true)
   {
     length = read_be32(infile); // read length
@@ -92,17 +143,17 @@ int open_png(char *path,int *width,int *height, RGB **out_texture)
 
         if (temp == NULL) 
         {
+          printf("realloc error");
           free(IDAT_raw);
           return 1;
         }
         else
         {
           IDAT_raw = temp;
-          free(temp);
         }
       }
 
-      size_t read_data = fread(IDAT_raw, 1, length, infile);
+      size_t read_data = fread(IDAT_raw + all_length - length, 1, length, infile);
       if (read_data != length) 
       {
         printf("Wasnt't able to read IDAT");
@@ -119,6 +170,5 @@ int open_png(char *path,int *width,int *height, RGB **out_texture)
 
     fseek(infile, 4, SEEK_CUR);
   }
-  *out_texture = image_ptr;
-  return 0;
+ return 0;
 }
