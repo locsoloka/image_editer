@@ -12,8 +12,8 @@
 
 #include "../helpers/reader_functions.h"
 
-int bytes_per_pixel;
 uint32_t all_length;
+unsigned long destlen;
 
 int read_png_header(PNG_IHDR *IHDR, FILE *infile)
 {
@@ -67,47 +67,13 @@ int bytes_per_pixel_switch(PNG_IHDR IHDR)
   return 0;
 }
 
-int read_IDAT()
+int read_IDAT(FILE *infile, uint8_t **IDAT_raw)
 {
-  
-}
-
-int  uncompress_png()
-{
-  uint8_t (*image_ptr) = calloc(all_length, sizeof(uint16_t));
-  if (image_ptr == NULL)
-  {
-    printf("couldn 't calloc enugh memory");
-  }
-  int state = uncompress(image_ptr, &destLen, IDAT_raw, all_length);
-  if (state == Z_OK)
-  {
-    printf("uncompress cussesfuly");
-  }
-  else
-  {
-    printf("error:%i\n", state);
-  }
-
-}
-
-int open_png(char *path,int *width,int *height, RGB **out_texture)
-{
-  PNG_IHDR IHDR;
   uint32_t length;
   char chunk_type[5];
 
   int IDAT_count = 0;
   chunk_type[4] = '\0';
-
-  uint8_t *IDAT_raw = NULL;
-
-  FILE (*infile) = fopen(path, "rb");
-  read_png_header(&IHDR, infile);
-
-  bytes_per_pixel = bytes_per_pixel_switch(IHDR);
-
-  unsigned long destLen = *height * (1 + (*width * bytes_per_pixel));
 
   fseek(infile, 4, SEEK_CUR);
   while (true)
@@ -134,26 +100,26 @@ int open_png(char *path,int *width,int *height, RGB **out_texture)
       if (IDAT_count == 0) 
       {
         all_length = length;
-        IDAT_raw = calloc(length, sizeof(uint8_t));
+        *IDAT_raw = calloc(length, sizeof(uint8_t));
       }
       else
       {
         all_length += length;
-        uint8_t *temp = realloc(IDAT_raw, all_length * sizeof(uint8_t));
+        uint8_t *temp = realloc(*IDAT_raw, all_length * sizeof(uint8_t));
 
         if (temp == NULL) 
         {
           printf("realloc error");
-          free(IDAT_raw);
+          free(*IDAT_raw);
           return 1;
         }
         else
         {
-          IDAT_raw = temp;
+          *IDAT_raw = temp;
         }
       }
 
-      size_t read_data = fread(IDAT_raw + all_length - length, 1, length, infile);
+      size_t read_data = fread(*IDAT_raw + all_length - length, 1, length, infile);
       if (read_data != length) 
       {
         printf("Wasnt't able to read IDAT");
@@ -170,5 +136,66 @@ int open_png(char *path,int *width,int *height, RGB **out_texture)
 
     fseek(infile, 4, SEEK_CUR);
   }
+  return 0;
+}
+
+int  uncompress_png(uint8_t *IDAT_raw)
+{
+  uint8_t (*image_ptr) = calloc(all_length, sizeof(uint16_t));
+  if (image_ptr == NULL)
+  {
+    printf("couldn 't calloc enugh memory");
+  }
+  int state = uncompress(image_ptr, &destlen, IDAT_raw, all_length);
+  if (state == Z_OK)
+  {
+    printf("uncompress cussesfuly");
+  }
+  if (state == Z_BUF_ERROR)
+  {
+    printf("Z_BUF_ERROR");
+  }
+  if (state == Z_DATA_ERROR)
+  {
+    printf("Z_BUF_ERROR");
+  }
+  if (state == Z_MEM_ERROR)
+  {
+    printf("Z_BUF_ERROR");
+  }
+  if (state == Z_STREAM_ERROR)
+  {
+    printf("Z_STREAM_ERROR");
+  }
+  else
+  {
+    printf("error:%i\n", state);
+  }
+  return state;
+}
+
+int open_png(char *path,int *width,int *height, RGB **out_texture)
+{
+  PNG_IHDR IHDR;
+  
+  int bytes_per_pixel;
+  uint8_t *IDAT_raw = NULL;
+
+  FILE (*infile) = fopen(path, "rb");
+  read_png_header(&IHDR, infile);
+
+  read_IDAT(infile, &IDAT_raw);
+
+  bytes_per_pixel = bytes_per_pixel_switch(IHDR);
+
+  *height = IHDR.height;
+  *width  = IHDR.width;
+
+  printf("height: %i\n", *height);
+  printf("width: %i\n", *width);
+  destlen = *height * (1 + (*width * bytes_per_pixel));
+
+  uncompress_png(IDAT_raw);
+
  return 0;
 }

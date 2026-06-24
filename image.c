@@ -35,7 +35,7 @@ int main(void)
     char *user_path = calloc(100, sizeof(char));
     scanf("%s", user_path);
 
-    int status = open_bmp(user_path ,&width, &height, &out_texture);
+    int status = open_png(user_path ,&width, &height, &out_texture);
     if (status != 0)
     {
         printf("%i\n", status);
