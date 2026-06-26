@@ -175,43 +175,46 @@ int uncompress_png(uint8_t *IDAT_raw, uint8_t **image_uncompressed)
   return state;
 }
 
-int filter_sub(uint8_t *image_uncompressed, uint8_t **image_ptr ,uint16_t row_in_bytes, int *width,uint8_t bpp)
+int filter_sub(uint8_t *image_uncompressed, uint8_t **image_ptr ,uint16_t src_width, uint16_t dest_width, uint16_t with_out, int *width,uint8_t bpp)
 {
-  uint8_t a;
-  uint8_t b;
+  uint8_t *out_texture = *image_ptr;
 
-  uint8_t origin;
+  out_texture[dest_width] = image_uncompressed[src_width + 1];
 
-  for (uint16_t i = 1; i < *width; i++)
+  for (uint16_t i = 0; i < with_out; i++)
   {
-    if (i == 1)
-    {
-      continue;
-    }
-    else
-    {
-      memcpy(&a, image_uncompressed + row_in_bytes + ((i - 1) * bpp), bpp);
-      memcpy(&b, image_uncompressed + row_in_bytes + (i * bpp), bpp);
-      origin = sum_8b(a , b);
-      memcpy(*image_ptr , origin + row_in_bytes + (i * bpp), bpp);
-    }
- }
+    uint8_t x = image_uncompressed[src_width + 1 + i]; // az olvasandó "+ 1" azért kell hogy kihadjuk a filter bytot
+    uint8_t y = out_texture[dest_width + i - bpp]; // balra lévő olvasása
+
+    out_texture[dest_width + i] = x + y; // uint8_t automatikus megakadályoza a overflowt
+  }
+  return 0;
 }
 
 int filter_png(uint8_t *image_uncompressed, uint8_t **image_ptr ,int *width, int *height, uint8_t bytes_per_pixel)
 {
-  uint16_t width_in_bytes = (*width * bytes_per_pixel) + 1;
+  uint16_t with_out = (*width * bytes_per_pixel);
+  uint16_t with_in = with_out + 1;
+
+  uint8_t *out_texture = *image_ptr;
+
   for (uint16_t i = 0; i < *height; i++)
   {
-    uint8_t filter_type = image_uncompressed[width_in_bytes * i];
+    uint16_t dest_width = i * with_out;
+    uint16_t src_width  = i * with_in;
+
+    uint8_t filter_type = image_uncompressed[src_width];
 
     switch (filter_type)
     {
       case 0:
+      memcpy(out_texture + dest_width, image_uncompressed + src_width, with_out);
       break;
+      
       case 1:
-      filter_sub(image_uncompressed, *image_ptr,width_in_bytes * i, *width, bytes_per_pixel);
+      filter_sub(image_uncompressed, image_ptr, src_width, dest_width, with_out ,width, bytes_per_pixel);
       break;
+
     }
   }
   return 0;
@@ -242,7 +245,7 @@ int open_png(char *path,int *width,int *height, RGB **out_texture)
 
   uint8_t *image_ptr = malloc(*width * *height * bytes_per_pixel);
 
-  filter_png(image_uncompressed, &image_ptr ,width, height, bytes_per_pixel);
+  filter_png(image_uncompressed, &image_ptr,width, height, bytes_per_pixel);
 
  return 0;
 }

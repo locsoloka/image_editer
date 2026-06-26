@@ -7,4 +7,5 @@ uint8_t sum_8b(uint8_t a, uint8_t b)
   {
     sum =- 256;
   }
+  return sum;
 }
