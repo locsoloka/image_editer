@@ -15,9 +15,9 @@ typedef struct
 
 typedef struct
 {
-    BYTE rgbtBlue;
-    BYTE rgbtGreen;
     BYTE rgbtRed;
+    BYTE rgbtGreen;
+    BYTE rgbtBlue;
 } RGB;
 
 #endif
