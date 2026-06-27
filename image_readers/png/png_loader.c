@@ -191,6 +191,60 @@ int filter_sub(uint8_t *image_uncompressed, uint8_t **image_ptr ,uint16_t src_wi
   return 0;
 }
 
+int filter_up(uint8_t *image_uncompressed, uint8_t **image_ptr ,uint16_t src_width, uint16_t dest_width, uint16_t with_out, uint16_t upper_row ,int *width,uint8_t bpp)
+{
+  uint8_t *out_texture = *image_ptr;
+
+  for (uint16_t i = 0; i < with_out; i++)
+  {
+    uint8_t x = image_uncompressed[src_width + 1 + i]; // az olvasandó "+ 1" azért kell hogy kihadjuk a filter bytot
+    uint8_t y = out_texture[upper_row + i]; // fent lévő olvasása
+
+    out_texture[dest_width + i] = x + y; // uint8_t automatikus megakadályoza a overflowt
+  }
+  return 0;
+}
+
+int filter_avg(uint8_t *image_uncompressed, uint8_t **image_ptr ,uint16_t src_width, uint16_t dest_width, uint16_t with_out, uint16_t upper_row ,int *width,uint8_t bpp)
+{
+  uint8_t *out_texture = *image_ptr;
+
+  uint8_t x = image_uncompressed[src_width + 1];
+  uint8_t y = x;
+  uint8_t z = out_texture[upper_row]; // fent lévő olvasása
+
+  out_texture[dest_width] = x + ((y + z) / 2); // uint8_t automatikus megakadályoza a overflowt
+
+  for (uint16_t i = 0; i < with_out; i++)
+  {
+    uint8_t x = image_uncompressed[src_width + 1 + i]; // target az olvasandó "+ 1" azért kell hogy kihadjuk a filter bytot
+    uint8_t y = out_texture[dest_width + i - bpp]; // balra lévő olvasása
+    uint8_t z = out_texture[upper_row + i]; // fent lévő olvasása
+
+    out_texture[dest_width + i] = x + ((y + z) / 2); // uint8_t automatikus megakadályoza a overflowt
+  }
+  return 0;
+}
+
+int filter_peath(uint8_t *image_uncompressed, uint8_t **image_ptr ,uint16_t src_width, uint16_t dest_width, uint16_t with_out, uint16_t upper_row ,int *width,uint8_t bpp)
+{
+  uint8_t *out_texture = *image_ptr;
+
+  for (uint16_t i = 0; i < with_out; i++)
+  {
+    uint8_t target = image_uncompressed[src_width + 1 + i]; // target az olvasandó "+ 1" azért kell hogy kihadjuk a filter bytot
+    
+    uint8_t left = out_texture[dest_width + i - bpp]; // balra lévő olvasása
+    uint8_t upper_left = out_texture[upper_row + i - bpp]; // fent lévő olvasása
+    uint8_t upper = out_texture[upper_row + i]; // fent lévő olvasása
+
+    out_texture[dest_width + i] =
+     target + paeth_predictor(left, upper_left, upper); // uint8_t automatikus megakadályoza a overflowt
+  }
+  return 0;
+
+}
+
 int filter_png(uint8_t *image_uncompressed, uint8_t **image_ptr ,int *width, int *height, uint8_t bytes_per_pixel)
 {
   uint16_t with_out = (*width * bytes_per_pixel);
@@ -215,12 +269,24 @@ int filter_png(uint8_t *image_uncompressed, uint8_t **image_ptr ,int *width, int
       filter_sub(image_uncompressed, image_ptr, src_width, dest_width, with_out ,width, bytes_per_pixel);
       break;
 
+      case 2:
+      uint16_t upper_row = (i - 1) * with_out;
+      filter_up(image_uncompressed, image_ptr, src_width, dest_width, with_out, upper_row,width, bytes_per_pixel);
+      break;
+
+      case 3:
+      filter_avg(image_uncompressed, image_ptr, src_width, dest_width, with_out, upper_row,width, bytes_per_pixel);
+      break;
+
+      case 4:
+      filter_peath(image_uncompressed, image_ptr, src_width, dest_width, with_out, upper_row,width, bytes_per_pixel);
+      break;
     }
   }
   return 0;
 }
 
-int open_png(char *path,int *width,int *height, RGB **out_texture)
+int open_png(char *path,int *width,int *height, uint8_t **out_texture)
 {
   PNG_IHDR IHDR;
  
@@ -247,5 +313,6 @@ int open_png(char *path,int *width,int *height, RGB **out_texture)
 
   filter_png(image_uncompressed, &image_ptr,width, height, bytes_per_pixel);
 
+  *out_texture = image_ptr;
  return 0;
 }
