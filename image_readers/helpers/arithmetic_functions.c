@@ -13,7 +13,7 @@ uint8_t sum_8b(uint8_t a, uint8_t b)
 
 uint8_t paeth_predictor(uint8_t a, uint8_t b, uint8_t c)
 {
-  uint16_t p = a + b - c;
+  uint32_t p = a + b - c;
   uint16_t pa = abs(p - a);
   uint16_t pb = abs(p - b);
   uint16_t pc = abs(p - c);

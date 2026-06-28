@@ -8,10 +8,11 @@
 #include "../../zlib-1.3.2/zlib.h"
 
 #include "../../file_types/png.h"
-#include "../../file_types/raw_image.h"
 
 #include "../helpers/reader_functions.h"
 #include "../helpers/arithmetic_functions.h"
+
+#include "../../file_types/raw_image.h"
 
 uint32_t all_length;
 unsigned long destlen;
@@ -57,11 +58,11 @@ int bytes_per_pixel_switch(PNG_IHDR IHDR)
     break;
 
     case 2:
-    return 3; // RGB
+    return (IHDR.bit_depth / 8) * 3; // RGB
     break;
 
     case 6:
-    return 4; // RGBA
+    return (IHDR.bit_depth / 8) * 4; // RGBA
     break;
 
   }
@@ -215,7 +216,7 @@ int filter_avg(uint8_t *image_uncompressed, uint8_t **image_ptr ,uint32_t src_wi
     uint8_t y = (i >= bpp) ? out_texture[dest_width + i - bpp] : 0; // balra lévő olvasása
     uint8_t z = (!is_first_row) ? out_texture[upper_row + i] : 0; // fent lévő olvasása
 
-    out_texture[dest_width + i] = x + ((y + z) / 2); // uint8_t automatikus megakadályoza a overflowt
+    out_texture[dest_width + i] = x + (((uint16_t)y + (uint16_t)z) / 2); // uint8_t automatikus megakadályoza a overflowt
   }
   return 0;
 }
@@ -253,7 +254,7 @@ int filter_png(uint8_t *image_uncompressed, uint8_t **image_ptr ,int *width, int
 
     uint8_t filter_type = image_uncompressed[src_width];
     printf("%i", filter_type);
-    uint32_t upper_row;
+    uint32_t upper_row = 0;
 
     switch (filter_type)
     {
