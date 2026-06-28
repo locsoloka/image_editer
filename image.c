@@ -49,7 +49,7 @@ int main(void)
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
     texture = SDL_CreateTexture(renderer,
-                    SDL_PIXELFORMAT_BGR24,
+                    SDL_PIXELFORMAT_RGB24,
                     SDL_TEXTUREACCESS_STATIC,
                     width,height);
     printf("texture_created \n");
