@@ -1,4 +1,4 @@
-#include <SDL2/SDL.h>
+#include <gtk/gtk.h>
 #include <stdio.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -19,201 +19,75 @@ bool running = true;
 
 bool texture_needs_update = false;
 
-RGB (*out_texture) = NULL;
-SDL_Texture *texture = NULL;
+RGB *out_texture = NULL;
 
-void* input_thread(void *);
-
-void gray_scale_switch(void);
-void sepia_switch(void);
-
-int main(void)
+static void on_file_open_ready(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-    // here i used ai for SDL2 functions
-    SDL_Init(SDL_INIT_VIDEO);
+    GtkFileDialog *dialog = GTK_FILE_DIALOG(source_object);
+    GtkWidget *window = GTK_WIDGET(user_data);
+    GError *error = NULL;
 
-    char *user_path = calloc(100, sizeof(char));
-    scanf("%s", user_path);
-
-    int status = open_png(user_path ,&width, &height, &out_texture);
-    if (status != 0)
-    {
-        printf("%i\n", status);
-        fprintf(stderr, "Error loading BMP file\n");
-        SDL_Quit();
-        return 1;
+    GFile *file = gtk_file_dialog_open_finish(dialog, res, &error);
+    if (error != NULL) {
+        g_clear_error(&error);
+        return;
     }
 
-    // kezdődik a SDl
-    SDL_Window* window = SDL_CreateWindow("C grafika", 100,100,640,480,0);
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    char *file_path = g_file_get_path(file);
+    open_png(file_path, &width, &height, &out_texture);
 
-    texture = SDL_CreateTexture(renderer,
-                    SDL_PIXELFORMAT_RGB24,
-                    SDL_TEXTUREACCESS_STATIC,
-                    width,height);
-    printf("texture_created \n");
+    GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data(
+        (const guchar *)out_texture,
+        GDK_COLORSPACE_RGB,
+        FALSE,
+        8,
+        width,
+        height,
+        width * 3,
+        NULL,
+        NULL
+    );
 
-    SDL_UpdateTexture(texture, NULL, out_texture, width * sizeof(RGB));
-    
-    SDL_Event e;
-    // i used ai for the multi threading beacuse I couldn' t figure out have multiple loops at once
-    pthread_t thread_id;
-    if (pthread_create(&thread_id, NULL, input_thread, NULL) != 0) {
-        fprintf(stderr, "Nem sikerult letrehozni a szalat\n");
-    }
+    // GdkPixbuf → GdkTexture (GTK4-hoz kell)
+    GdkTexture *texture = gdk_texture_new_for_pixbuf(pixbuf);
+    g_object_unref(pixbuf);
 
-    while (running)
-    {
-        while (SDL_PollEvent(&e))
-        {
-            if (e.type == SDL_QUIT)
-            {
-                running = false;
-            }
-        }
-        
-        if (texture_needs_update)
-        {
-            SDL_UpdateTexture(texture, NULL, out_texture, width * sizeof(RGB));
-            texture_needs_update = false; // Visszaállítjuk, mert elvégeztük a munkát
-        }
-        
-        SDL_RenderClear(renderer);
-        SDL_RenderCopy(renderer, texture, NULL, NULL);
-        SDL_RenderPresent(renderer);
-        
-    }
-    SDL_Delay(3000);
+    // GtkPicture: automatikusan skálázódik az ablakhoz
+    GtkWidget *picture = gtk_picture_new_for_paintable(GDK_PAINTABLE(texture));
+    g_object_unref(texture);
 
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-    
-    free(out_texture);
-    free(user_path);
+    // Megtartja az arányokat, de kitölti a teret
+    gtk_picture_set_content_fit(GTK_PICTURE(picture), GTK_CONTENT_FIT_CONTAIN);
 
-    return 0;
+    gtk_widget_set_hexpand(picture, TRUE);
+    gtk_widget_set_vexpand(picture, TRUE);
+
+    gtk_window_set_child(GTK_WINDOW(window), picture);
+
+    g_free(file_path);
+    g_object_unref(file);
 }
 
-void* input_thread(void *arg)
+static void activate(GtkApplication *app, gpointer user_data)
 {
-    printf("input: \n");
-    char command;
+    GtkWidget *window = gtk_application_window_new(app);
+    gtk_window_set_title(GTK_WINDOW(window), "Képmegjelenítő");
 
-    while (running)
-    {
-        command = getchar();
+    // Alapméret beállítása
+    gtk_window_set_default_size(GTK_WINDOW(window), 800, 600);
 
-        if (command == '\n' || command == EOF)
-        {
-            continue;
-        }
-        
-        switch (command)
-        {
-        case 'q':
-            running = false;
-            break;
-        
-        case 'g':
-            gray_scale_switch();
-            break;
-        
-        case 's':
-            sepia_switch();
-            break;
-        case 'b':
-            blur(height, width, out_texture, 1);       
-            texture_needs_update = true;
-            break;
-        case 'm':
-            mirror_horizontal(height, width, out_texture, 1);
-            texture_needs_update = true;
-            break;
-        }
-    }
-    
-    return NULL;
+    GtkFileDialog *file_dialog = gtk_file_dialog_new();
+    gtk_file_dialog_set_title(file_dialog, "Válassz ki egy PNG képet!");
+
+    gtk_window_present(GTK_WINDOW(window));
+    gtk_file_dialog_open(file_dialog, GTK_WINDOW(window), NULL, on_file_open_ready, window);
+    g_object_unref(file_dialog);
 }
-void gray_scale_switch(void)
+
+int main(int argc, char *argv[])
 {
-    printf("\n GRAYSCALE --help or e\n");
-    
-    // we need this or else it would execute it self without user input
-    {
-        int c;
-        while ((c = getchar()) != '\n' && c != EOF);
-    }
-
-    char sub_command[100];
-    fflush(stdout);
-
-    if (fgets(sub_command, sizeof(sub_command), stdin) != NULL)
-    {
-        float strength = 1;
-        sub_command[strcspn(sub_command, "\n")] = 0;
-
-        if (strcmp(sub_command, "--help") == 0)
-        { printf("execute: press: e\n");
-            printf("change: strength: --config -s\n");
-        }
-        else if (strcmp(sub_command, "--config -s") == 0)
-        {
-            printf("strength: ");
-            scanf("%f", &strength);
-            
-            grayscale(height, width, out_texture, strength);
-            texture_needs_update = true;
-        }
-        else if (strcmp(sub_command, "e") == 0)
-        {
-            grayscale(height, width, out_texture, strength);
-            texture_needs_update = true;                    
-        }
-        else
-        {
-            printf("command not found\n");
-        }
-    }
+    GtkApplication *app = gtk_application_new("hu.pelda.kep", G_APPLICATION_DEFAULT_FLAGS);
+    g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
+    return g_application_run(G_APPLICATION(app), argc, argv);
 }
-void sepia_switch(void)
-{
-    printf("--help or e\n");
-    float strength = 1;    
-    // we need this or else it would execute it self without user input
-    {
-        int c;
-        while ((c = getchar()) != '\n' && c != EOF);
-    }
 
-    char sub_command[100];
-    fflush(stdout);
-
-    if (fgets(sub_command, sizeof(sub_command), stdin) != NULL)
-    {
-        // we remove /n from the end
-        sub_command[strcspn(sub_command, "\n")] = 0;
-        if (strcmp(sub_command, "--help") == 0)
-        {
-            printf("Configure strenth: --config -s\n");
-            printf("default: e\n");
-        }
-        else if (strcmp(sub_command, "e") == 0)
-        {
-            sepia(height, width, out_texture, strength);       
-            texture_needs_update = true;
-        }
-        else if (strcmp(sub_command, "--config -s") == 0)
-        {
-            printf("strength: ");
-            scanf("%f", &strength);
-            sepia(height, width, out_texture, strength);       
-            texture_needs_update = true;
-            
-        }
-        else
-        {
-            printf("\ncommand not found\n");
-        }
-    }
-}
