@@ -20,4 +20,6 @@ typedef struct
     BYTE rgbtBlue;
 } RGB;
 
+
+
 #endif

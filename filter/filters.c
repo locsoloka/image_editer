@@ -56,27 +56,30 @@ void sepia(int height, int width, RGB *image, float strength)
 
 void mirror_horizontal(int height, int width, RGB *image, float strength)
 {
+    printf("%i", height);
+    printf("%i", width);
     for (int y = 0;y < height;y++)
     {
         for (int x = 0 ; x < width / 2;x++)
         {
             LONG index = y * width + x;
+            LONG index_m = ((y + 1) * width) - 1 - x;
 
             int R = image[index].rgbtRed;
             int G = image[index].rgbtGreen;
             int B = image[index].rgbtBlue;
 
-            int R_b = image[y * width - x].rgbtRed;
-            int G_b = image[y * width - x].rgbtGreen;
-            int B_b = image[y * width - x].rgbtBlue;
+            int R_b = image[index_m].rgbtRed;
+            int G_b = image[index_m].rgbtGreen;
+            int B_b = image[index_m].rgbtBlue;
 
             image[index].rgbtRed   = R_b;
             image[index].rgbtGreen = G_b;
             image[index].rgbtBlue  = B_b;
 
-            image[y * width - x].rgbtRed   = R;
-            image[y * width - x].rgbtGreen = G;
-            image[y * width - x].rgbtBlue  = B;
+            image[index_m].rgbtRed   = R;
+            image[index_m].rgbtGreen = G;
+            image[index_m].rgbtBlue  = B;
         }
     }
     return;
@@ -85,7 +88,11 @@ void mirror_horizontal(int height, int width, RGB *image, float strength)
 void blur(int height, int width, RGB *image, float strength)
 {
     RGB *copy = malloc(width * height * sizeof(RGB));
-    
+    if (copy == NULL)
+    {
+        return;
+    }
+
     for (int y = 0;y < height;y++)
     {
         for (int x = 0 ; x < width;x++)
@@ -115,14 +122,19 @@ void blur(int height, int width, RGB *image, float strength)
                         sum_of_Blue  += copy[jindex].rgbtBlue;
                         count++;
 
-                        image[index].rgbtRed   = sum_of_Red   / count;
-                        image[index].rgbtGreen = sum_of_Green / count;
-                        image[index].rgbtBlue  = sum_of_Blue  / count;
                     }
                 }
+            
+            if (count > 0)
+            {
+                image[index].rgbtRed   = sum_of_Red   / count;
+                image[index].rgbtGreen = sum_of_Green / count;
+                image[index].rgbtBlue  = sum_of_Blue  / count;
 
+            }
         }
 
     }
+    free(copy);
     return;
 }
