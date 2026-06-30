@@ -10,7 +10,8 @@ image.c \
 	image_readers/png/png_loader.c \
 	image_readers/helpers/reader_functions.c \
 	image_readers/helpers/arithmetic_functions.c \
-	filter/filters.c
+	filter/filters.c \
+	history/history.c
 
 TARGET = file 
 
