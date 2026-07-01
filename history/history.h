@@ -1,9 +1,9 @@
 #include "../file_types/raw_image.h"
-
+#include <stdbool.h>
 
 typedef struct 
 {
-    void (*filter)(int, int, RGB*, float);
+    void (*filter)(int, int, RGB*, float, bool);
     int height;
     int width;
     RGB *image;
@@ -13,7 +13,7 @@ typedef struct
 
 
 void history_push(
-    history_node *head, void (*filter)(int, int, RGB*, float), int height, int width, RGB *image, float strength);
+    history_node *head, void (*filter)(int, int, RGB*, float, bool), int height, int width, RGB *image, float strength);
 
 void history_undo(
     history_node *head);

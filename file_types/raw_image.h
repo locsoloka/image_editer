@@ -21,5 +21,13 @@ typedef struct
 } RGB;
 
 
+typedef struct
+{
+    BYTE rgbtBlue;
+    BYTE rgbtGreen;
+    BYTE rgbtRed;
+} BGR;
+
+
 
 #endif

@@ -1,17 +1,25 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <math.h>
 
 #include "../file_types/raw_image.h"
 
-void grayscale(int height, int width, RGB *image, float strength)
+void grayscale(int height, int width, RGB *image, float strength, bool is_png)
 {
-  for (LONG y = 0;y < height;y++)
-  {
+    for (LONG y = 0;y < height;y++)
+    {
       for (LONG x = 0 ; x < width;x++)
       {
         LONG index = y * width + x;
-        
+    
+        if (is_png == false)
+        {
+            BYTE temp = image[index].rgbtRed;
+            image[index].rgbtRed = image[index].rgbtBlue;
+            image[index].rgbtBlue = temp;
+        }
+
         BYTE R = image[index].rgbtRed;
         BYTE G = image[index].rgbtGreen;
         BYTE B = image[index].rgbtBlue;
@@ -22,39 +30,60 @@ void grayscale(int height, int width, RGB *image, float strength)
         image[index].rgbtRed   =  round((1 - strength) * image[index].rgbtRed   + strength * average);
         image[index].rgbtGreen =  round((1 - strength) * image[index].rgbtGreen + strength * average);
         image[index].rgbtBlue  =  round((1 - strength) * image[index].rgbtBlue  + strength * average);
+    
+        if (is_png == false)
+        {
+            BYTE temp = image[index].rgbtRed;
+            image[index].rgbtRed = image[index].rgbtBlue;
+            image[index].rgbtBlue = temp;
+        }
     }
   }
   return;
 }
 
-void sepia(int height, int width, RGB *image, float strength)
+void sepia(int height, int width, RGB *image, float strength, bool is_png)
 {
-  for (LONG y = 0;y < height;y++)
-  {
-    for (LONG x = 0 ; x < width;x++)
+    for (LONG y = 0;y < height;y++)
     {
-      LONG index = y * width + x;
+        for (LONG x = 0 ; x < width;x++)
+        {
+          LONG index = y * width + x;
 
-      double R = image[index].rgbtRed;
-      double G = image[index].rgbtGreen;
-      double B = image[index].rgbtBlue;
+          if (is_png == false)
+          {
+            BYTE temp = image[index].rgbtRed;
+            image[index].rgbtRed = image[index].rgbtBlue;
+            image[index].rgbtBlue = temp;
+          }
 
-      int sepiaRed   = round((1 - strength) * R + strength * (.393 * R + .769 * G + .189 * B));
-      int sepiaGreen = round((1 - strength) * G + strength * (.349 * R + .686 * G + .168 * B));
-      int sepiaBlue  = round((1 - strength) * B + strength * (.272 * R + .534 * G + .131 * B));
+          double R = image[index].rgbtRed;
+          double G = image[index].rgbtGreen;
+          double B = image[index].rgbtBlue;
 
-      if (sepiaRed > 255)   sepiaRed = 255;
-      if (sepiaGreen > 255) sepiaGreen = 255;
-      if (sepiaBlue > 255)  sepiaBlue = 255;
+          int sepiaRed   = round((1 - strength) * R + strength * (.393 * R + .769 * G + .189 * B));
+          int sepiaGreen = round((1 - strength) * G + strength * (.349 * R + .686 * G + .168 * B));
+          int sepiaBlue  = round((1 - strength) * B + strength * (.272 * R + .534 * G + .131 * B));
 
-      image[index].rgbtRed = sepiaRed;                    
-      image[index].rgbtGreen = sepiaGreen;            
-      image[index].rgbtBlue = sepiaBlue;                    
-    }   
-  }
+          if (sepiaRed > 255)   sepiaRed = 255;
+          if (sepiaGreen > 255) sepiaGreen = 255;
+          if (sepiaBlue > 255)  sepiaBlue = 255;
+
+          image[index].rgbtRed = sepiaRed;                    
+          image[index].rgbtGreen = sepiaGreen;            
+          image[index].rgbtBlue = sepiaBlue;                    
+
+          if (is_png == false)
+          {
+            BYTE temp = image[index].rgbtRed;
+            image[index].rgbtRed = image[index].rgbtBlue;
+            image[index].rgbtBlue = temp;
+          }
+        }   
+    }
 }
 
-void mirror_horizontal(int height, int width, RGB *image, float strength)
+void mirror_horizontal(int height, int width, RGB *image, float strength, bool is_png)
 {
     printf("%i", height);
     printf("%i", width);
@@ -64,6 +93,21 @@ void mirror_horizontal(int height, int width, RGB *image, float strength)
         {
             LONG index = y * width + x;
             LONG index_m = ((y + 1) * width) - 1 - x;
+
+            if (is_png == false)
+            {
+              BYTE temp = image[index].rgbtRed;
+              image[index].rgbtRed = image[index].rgbtBlue;
+              image[index].rgbtBlue = temp;
+            }
+    
+            if (is_png == false)
+            {
+              BYTE temp_m = image[index_m].rgbtRed;
+              image[index_m].rgbtRed = image[index_m].rgbtBlue;
+              image[index_m].rgbtBlue = temp_m;
+            }
+
 
             int R = image[index].rgbtRed;
             int G = image[index].rgbtGreen;
@@ -80,12 +124,26 @@ void mirror_horizontal(int height, int width, RGB *image, float strength)
             image[index_m].rgbtRed   = R;
             image[index_m].rgbtGreen = G;
             image[index_m].rgbtBlue  = B;
+
+            if (is_png == false)
+            {
+              BYTE temp = image[index].rgbtRed;
+              image[index].rgbtRed = image[index].rgbtBlue;
+              image[index].rgbtBlue = temp;
+            }
+    
+            if (is_png == false)
+            {
+              BYTE temp_m = image[index_m].rgbtRed;
+              image[index_m].rgbtRed = image[index_m].rgbtBlue;
+              image[index_m].rgbtBlue = temp_m;
+            }
         }
     }
     return;
 }
 
-void blur(int height, int width, RGB *image, float strength)
+void blur(int height, int width, RGB *image, float strength, bool is_png)
 {
     RGB *copy = malloc(width * height * sizeof(RGB));
     if (copy == NULL)
@@ -98,7 +156,21 @@ void blur(int height, int width, RGB *image, float strength)
         for (int x = 0 ; x < width;x++)
         {
           LONG index = y * width + x;
+            if (is_png == false)
+            {
+              BYTE temp = image[index].rgbtRed;
+              image[index].rgbtRed = image[index].rgbtBlue;
+              image[index].rgbtBlue = temp;
+            }
+
           copy[index] = image[index];
+
+          if (is_png == false)
+            {
+              BYTE temp = image[index].rgbtRed;
+              image[index].rgbtRed = image[index].rgbtBlue;
+              image[index].rgbtBlue = temp;
+            }
         }
     }
     for (int y = 0;y < height;y++)
@@ -106,6 +178,13 @@ void blur(int height, int width, RGB *image, float strength)
         {
             LONG index = y * width + x;
           
+            if (is_png == false)
+            {
+              BYTE temp = image[index].rgbtRed;
+              image[index].rgbtRed = image[index].rgbtBlue;
+              image[index].rgbtBlue = temp;
+            }
+    
             int sum_of_Red   = 0;
             int sum_of_Green = 0;
             int sum_of_Blue  = 0;
@@ -117,11 +196,24 @@ void blur(int height, int width, RGB *image, float strength)
                     if (ki >= 0 && ki < height && kj >= 0 && kj < width)
                     {
                         LONG jindex = ki * width + kj;
+                        if (is_png == false)
+                        {
+                            BYTE jtemp = image[jindex].rgbtRed;
+                            image[jindex].rgbtRed = image[jindex].rgbtBlue;
+                            image[jindex].rgbtBlue = jtemp;
+                        }
+
                         sum_of_Red   += copy[jindex].rgbtRed;
                         sum_of_Green += copy[jindex].rgbtGreen;
                         sum_of_Blue  += copy[jindex].rgbtBlue;
                         count++;
 
+                        if (is_png == false)
+                        {
+                            BYTE jtemp = image[jindex].rgbtRed;
+                            image[jindex].rgbtRed = image[jindex].rgbtBlue;
+                            image[jindex].rgbtBlue = jtemp;
+                        }
                     }
                 }
             
@@ -130,8 +222,14 @@ void blur(int height, int width, RGB *image, float strength)
                 image[index].rgbtRed   = sum_of_Red   / count;
                 image[index].rgbtGreen = sum_of_Green / count;
                 image[index].rgbtBlue  = sum_of_Blue  / count;
-
             }
+            if (is_png == false)
+            {
+                BYTE temp = image[index].rgbtRed;
+                image[index].rgbtRed = image[index].rgbtBlue;
+                image[index].rgbtBlue = temp;
+            }
+
         }
 
     }

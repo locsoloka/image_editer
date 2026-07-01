@@ -292,7 +292,7 @@ int filter_png(uint8_t *image_uncompressed, uint8_t **image_ptr ,int *width, int
   return 0;
 }
 
-int open_png(char *path,int *width,int *height, RGB **out_texture, RGB **image_oroginal)
+int open_png(char *path,int *width,int *height, RGB **out_texture, uint8_t *bpp)
 {
   PNG_IHDR IHDR;
  
@@ -316,13 +316,10 @@ int open_png(char *path,int *width,int *height, RGB **out_texture, RGB **image_o
   uncompress_png(IDAT_raw, &image_uncompressed);
 
   uint8_t *image_ptr = malloc(*width * *height * bytes_per_pixel);
-  RGB *image_ptr_2 = malloc(*width * *height * bytes_per_pixel);
-
 
   filter_png(image_uncompressed, &image_ptr,width, height, bytes_per_pixel);
 
   *out_texture = (RGB *) image_ptr;
-  
-  memcpy(image_ptr_2, image_ptr, *width * *height * bytes_per_pixel); 
+  *bpp = bytes_per_pixel;  
   return 0;
 }

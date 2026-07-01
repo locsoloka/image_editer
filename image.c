@@ -15,6 +15,7 @@
 
 int width = 0;
 int height = 0;
+uint8_t bpp;
 bool running = true;
 
 bool texture_needs_update = false;
@@ -27,7 +28,7 @@ SDL_Texture *texture = NULL;
 
 history_node *history = NULL;
 
-void (*fptr)(int height, int width, RGB *image, float strength);
+void (*fptr)(int height, int width, RGB *image, float strength, bool is_png);
 
 void* input_thread(void *);
 
@@ -117,7 +118,9 @@ void file_type_switch(char *filename)
 
     if (memcmp(buffer, png_header, 4) == 0)
     {
-        int status = open_png(filename, &width, &height, &out_texture, &image_original);
+        int status = open_png(filename, &width, &height, &out_texture, &bpp);
+        image_original = malloc(width * height * bpp);
+        memcpy(image_original, out_texture, width * height * bpp); 
         is_png = true;
     }
     else if (buffer[0] == 0x42 && buffer[1] == 0x4D)
@@ -130,6 +133,7 @@ void file_type_switch(char *filename)
             fprintf(stderr, "Error loading BMP file\n");
             SDL_Quit();
         }
+        image_original = malloc(width *  height * sizeof(RGB));
         memcpy(image_original, out_texture, width * height * sizeof(RGB));
     }
     else
@@ -167,7 +171,7 @@ void* input_thread(void *arg)
             break;
         case 'b':
             float strength = 1;
-            blur(height, width, out_texture, strength);       
+            blur(height, width, out_texture, strength, is_png);       
     
             // History managment
             fptr = &sepia;
@@ -177,7 +181,7 @@ void* input_thread(void *arg)
             break;
         case 'm':
             strength = 1;    
-            mirror_horizontal(height, width, out_texture, strength);
+            mirror_horizontal(height, width, out_texture, strength, is_png);
         
             // History managment
             fptr = &sepia;
@@ -187,8 +191,9 @@ void* input_thread(void *arg)
             break;
         case 'u':
             history_undo(history);
-            memcpy(out_texture, image_original, width * height * sizeof(RGB));
+            memcpy(out_texture, image_original, width * height * bpp); 
             recompute(history, &out_texture);
+            texture_needs_update = true;
         }
     }
     
@@ -221,7 +226,7 @@ void gray_scale_switch(void)
             printf("strength: ");
             scanf("%f", &strength);
             
-            grayscale(height, width, out_texture, strength);
+            grayscale(height, width, out_texture, strength, is_png);
 
             // history managment
             fptr = &grayscale;
@@ -231,7 +236,7 @@ void gray_scale_switch(void)
         }
         else if (strcmp(sub_command, "e") == 0)
         {
-            grayscale(height, width, out_texture, strength);
+            grayscale(height, width, out_texture, strength, is_png);
             // history managment
             fptr = &grayscale;
             history_push(history, fptr, height, width, out_texture, strength);
@@ -268,7 +273,7 @@ void sepia_switch(void)
         }
         else if (strcmp(sub_command, "e") == 0)
         {
-            sepia(height, width, out_texture, strength);       
+            sepia(height, width, out_texture, strength, is_png);       
 
             // history managment
             fptr = &sepia;
@@ -280,7 +285,7 @@ void sepia_switch(void)
         {
             printf("strength: ");
             scanf("%f", &strength);
-            sepia(height, width, out_texture, strength);       
+            sepia(height, width, out_texture, strength, is_png);       
             
             // History managment
             fptr = &sepia;

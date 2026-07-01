@@ -5,11 +5,12 @@
 
 typedef struct history_node 
 {
-    void (*filter)(int, int, RGB*, float);
+    void (*filter)(int, int, RGB*, float, bool);
     int height;
     int width;
     RGB *image;
     float strength;
+    bool is_png;
     struct history_node *next;
 }history_node;
 
@@ -17,7 +18,7 @@ uint16_t linked_list_len = 0;
 
 // this function req a     history_node *history = NULL;
 void history_push(
-    history_node *head, void (*filter)(int, int, RGB*, float), int height, int width, RGB *image, float strength)
+    history_node *head, void (*filter)(int, int, RGB*, float, bool), int height, int width, RGB *image, float strength, bool is_png)
 {
     history_node *tmp = malloc(sizeof(history_node));
     if (tmp == NULL) return;
@@ -27,6 +28,7 @@ void history_push(
     tmp->width = width;
     tmp->image = image;
     tmp->strength = strength;
+    tmp->is_png = is_png;
 
     tmp->next = NULL;
 
@@ -80,7 +82,7 @@ void recompute(
     history_node *current = head;
     while (current != NULL)
     {
-        current->filter(current->height, current->width, image_orginal, current->strength);
+        current->filter(current->height, current->width, image_orginal, current->strength, current->is_png);
         current = current->next;
     }
 }
