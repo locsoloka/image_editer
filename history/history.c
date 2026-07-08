@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "../file_types/raw_image.h"
@@ -18,8 +19,9 @@ uint16_t linked_list_len = 0;
 
 // this function req a     history_node *history = NULL;
 void history_push(
-    history_node *head, void (*filter)(int, int, RGB*, float, bool), int height, int width, RGB *image, float strength, bool is_png)
+    history_node **head, void (*filter)(int, int, RGB*, float, bool), int height, int width, RGB *image, float strength, bool is_png)
 {
+    printf("history push");
     history_node *tmp = malloc(sizeof(history_node));
     if (tmp == NULL) return;
 
@@ -32,13 +34,13 @@ void history_push(
 
     tmp->next = NULL;
 
-    if (head == NULL)
+    if (*head == NULL)
     {
-        head = tmp;
+        *head = tmp;
     }
     else
     {
-        history_node *last = head; 
+        history_node *last = *head; 
         while (last->next != NULL)
         {
             last = last->next;
@@ -47,33 +49,37 @@ void history_push(
     }        
 }
 
-void history_undo(
+uint16_t history_undo(
     history_node *head)
 {
+    uint16_t length_of_list = 0;
     if (head == NULL)
     {
-        return;
+        return length_of_list;
     }
 
     history_node *current = head;
 
     if (current->next == NULL)
     {
+        printf("current->next == NULL\n");
         free(current);
         head = NULL;
-        return;
+        return length_of_list;
     }
 
     history_node *before = head;
 
     while (current->next != NULL)
     {
+        length_of_list++;
         before = current;
         current = current->next;
     }
-
+    history_node *last = current; 
+    free(last);
     before->next = NULL;
-    free(current);
+    return length_of_list;
 }
 
 void recompute(
@@ -83,6 +89,7 @@ void recompute(
     while (current != NULL)
     {
         current->filter(current->height, current->width, image_orginal, current->strength, current->is_png);
+        printf("asd%i\n", current->filter);
         current = current->next;
     }
 }

@@ -175,7 +175,7 @@ void* input_thread(void *arg)
     
             // History managment
             fptr = &sepia;
-            history_push(history, fptr, height, width, out_texture, strength);
+            history_push(&history, fptr, height, width, out_texture, strength);
 
             texture_needs_update = true;
             break;
@@ -185,14 +185,25 @@ void* input_thread(void *arg)
         
             // History managment
             fptr = &sepia;
-            history_push(history, fptr, height, width, out_texture, strength);
+            history_push(&history, fptr, height, width, out_texture, strength);
 
             texture_needs_update = true;
             break;
         case 'u':
-            history_undo(history);
-            memcpy(out_texture, image_original, width * height * bpp); 
-            recompute(history, &out_texture);
+            uint16_t length_of_list = history_undo(history);
+            if (is_png)
+            {
+                memcpy(out_texture, image_original, width * height * bpp); 
+            }
+            else
+            {
+                memcpy(out_texture, image_original, width * height * sizeof(RGB)); 
+
+            }
+            if (length_of_list != 0)
+            {
+                recompute(history, out_texture);
+            }
             texture_needs_update = true;
         }
     }
@@ -230,7 +241,7 @@ void gray_scale_switch(void)
 
             // history managment
             fptr = &grayscale;
-            history_push(history, fptr, height, width, out_texture, strength);
+            history_push(&history, fptr, height, width, out_texture, strength);
 
             texture_needs_update = true;
         }
@@ -239,7 +250,7 @@ void gray_scale_switch(void)
             grayscale(height, width, out_texture, strength, is_png);
             // history managment
             fptr = &grayscale;
-            history_push(history, fptr, height, width, out_texture, strength);
+            history_push(&history, fptr, height, width, out_texture, strength);
             
             texture_needs_update = true;                    
         }
@@ -277,7 +288,7 @@ void sepia_switch(void)
 
             // history managment
             fptr = &sepia;
-            history_push(history, fptr, height, width, out_texture, strength);
+            history_push(&history, fptr, height, width, out_texture, strength);
 
             texture_needs_update = true;
         }
@@ -289,7 +300,7 @@ void sepia_switch(void)
             
             // History managment
             fptr = &sepia;
-            history_push(history, fptr, height, width, out_texture, strength);
+            history_push(&history, fptr, height, width, out_texture, strength);
 
             texture_needs_update = true;
             
