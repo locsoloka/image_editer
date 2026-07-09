@@ -15,7 +15,13 @@ void save_as_bmp(char *dest_name, char *src_name,
         return;
     }
 
-    uint8_t bytes_per_pixel = bpp / 8;
+    uint8_t bytes_per_pixel = sizeof(RGB);
+
+    if (is_png)
+    {
+        bytes_per_pixel = bpp / 8;
+    }
+
     int padding = (4 - (width * bytes_per_pixel) % 4) % 4;
 
     BITMAPFILEHEADER bf;
@@ -46,7 +52,7 @@ void save_as_bmp(char *dest_name, char *src_name,
         
         bi.biSize = 40;
         bi.biWidth = width;
-        bi.biHeight = height; // Ha fejjel lefele van a kep, legyen: -((int32_t)height)
+        bi.biHeight = height; 
         bi.biPlanes = 1;
         bi.biBitCount = bpp;
         bi.biCompression = 0;
@@ -64,7 +70,7 @@ void save_as_bmp(char *dest_name, char *src_name,
     fwrite(&bi, sizeof(BITMAPINFOHEADER), 1, outptr);
 
     // Pixelek kiirasa (Visszafele haladunk, hogy ne legyen fejjel lefele a kep)
-    for (int i = height - 1; i >= 0; i--)
+    for (int i = 0; i >= 0; i++)
     {
         uint8_t *row_ptr = image + (i * width * bytes_per_pixel);
         fwrite(row_ptr, bytes_per_pixel, width, outptr);
