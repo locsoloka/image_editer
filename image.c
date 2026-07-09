@@ -8,6 +8,8 @@
 #include "image_readers/png/png_loader.h"
 #include "image_readers/bmp/bmp_loader.h"
 
+#include "image_savers/bmp/bmp_saver.h"
+
 #include "file_types/raw_image.h"
 #include "filter/filters.h"
 
@@ -26,6 +28,8 @@ RGB *out_texture = NULL;
 RGB *image_original = NULL;
 SDL_Texture *texture = NULL;
 
+char *user_path;
+
 history_node *history = NULL;
 
 void (*fptr)(int height, int width, RGB *image, float strength, bool is_png);
@@ -41,7 +45,7 @@ int main(void)
     // here i used ai for SDL2 functions
     SDL_Init(SDL_INIT_VIDEO);
 
-    char *user_path = calloc(100, sizeof(char));
+    user_path = calloc(100, sizeof(char));
     scanf("%s", user_path);
 
     file_type_switch(user_path);
@@ -104,7 +108,6 @@ int main(void)
     SDL_Quit();
     
     free(out_texture);
-    free(user_path);
 
     return 0;
 }
@@ -119,8 +122,8 @@ void file_type_switch(char *filename)
     if (memcmp(buffer, png_header, 4) == 0)
     {
         int status = open_png(filename, &width, &height, &out_texture, &bpp);
-        image_original = malloc(width * height * bpp);
-        memcpy(image_original, out_texture, width * height * bpp); 
+        image_original = malloc(width * height * bpp / 8);
+        memcpy(image_original, out_texture, width * height * bpp / 8); 
         is_png = true;
     }
     else if (buffer[0] == 0x42 && buffer[1] == 0x4D)
@@ -174,7 +177,7 @@ void* input_thread(void *arg)
             blur(height, width, out_texture, strength, is_png);       
     
             // History managment
-            fptr = &sepia;
+            fptr = &blur;
             history_push(&history, fptr, height, width, out_texture, strength);
 
             texture_needs_update = true;
@@ -184,7 +187,7 @@ void* input_thread(void *arg)
             mirror_horizontal(height, width, out_texture, strength, is_png);
         
             // History managment
-            fptr = &sepia;
+            fptr = &mirror_horizontal;
             history_push(&history, fptr, height, width, out_texture, strength);
 
             texture_needs_update = true;
@@ -205,7 +208,11 @@ void* input_thread(void *arg)
                 recompute(history, out_texture);
             }
             texture_needs_update = true;
+            break;
+        case 'w':
+            save_as_bmp("test.bmp", user_path, height, width, (uint8_t *) out_texture, is_png, bpp);
         }
+
     }
     
     return NULL;

@@ -11,7 +11,8 @@ image.c \
 	image_readers/helpers/reader_functions.c \
 	image_readers/helpers/arithmetic_functions.c \
 	filter/filters.c \
-	history/history.c
+	history/history.c \
+	image_savers/bmp/bmp_saver.c
 
 TARGET = file 
 
