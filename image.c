@@ -196,7 +196,7 @@ void* input_thread(void *arg)
             uint16_t length_of_list = history_undo(history);
             if (is_png)
             {
-                memcpy(out_texture, image_original, width * height * bpp); 
+                memcpy(out_texture, image_original, width * height * bpp / 8); 
             }
             else
             {
