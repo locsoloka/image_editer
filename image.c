@@ -163,6 +163,10 @@ void* input_thread(void *arg)
         {
         case 'q':
             running = false;
+            free(out_texture);
+            free(image_original);
+            free(user_path);
+            free(history);
             break;
         
         case 'g':
