@@ -50,25 +50,25 @@ void history_push(
 }
 
 uint16_t history_undo(
-    history_node *head)
+    history_node **head)
 {
     uint16_t length_of_list = 0;
-    if (head == NULL)
+    if (*head == NULL)
     {
         return length_of_list;
     }
 
-    history_node *current = head;
+    history_node *current = *head;
 
     if (current->next == NULL)
     {
         printf("current->next == NULL\n");
         free(current);
-        head = NULL;
+        *head = NULL;
         return length_of_list;
     }
 
-    history_node *before = head;
+    history_node *before = *head;
 
     while (current->next != NULL)
     {

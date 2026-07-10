@@ -122,8 +122,8 @@ void file_type_switch(char *filename)
     if (memcmp(buffer, png_header, 4) == 0)
     {
         int status = open_png(filename, &width, &height, &out_texture, &bpp);
-        image_original = malloc(width * height * bpp / 8);
-        memcpy(image_original, out_texture, width * height * bpp / 8); 
+        image_original = malloc(width * height * sizeof(RGB));
+        memcpy(image_original, out_texture, width * height * sizeof(RGB)); 
         is_png = true;
     }
     else if (buffer[0] == 0x42 && buffer[1] == 0x4D)
@@ -182,7 +182,7 @@ void* input_thread(void *arg)
     
             // History managment
             fptr = &blur;
-            history_push(&history, fptr, height, width, out_texture, strength);
+            history_push(&history, fptr, height, width, out_texture, strength, is_png);
 
             texture_needs_update = true;
             break;
@@ -192,15 +192,15 @@ void* input_thread(void *arg)
         
             // History managment
             fptr = &mirror_horizontal;
-            history_push(&history, fptr, height, width, out_texture, strength);
+            history_push(&history, fptr, height, width, out_texture, strength, is_png);
 
             texture_needs_update = true;
             break;
         case 'u':
-            uint16_t length_of_list = history_undo(history);
+            uint16_t length_of_list = history_undo(&history);
             if (is_png)
             {
-                memcpy(out_texture, image_original, width * height * bpp / 8); 
+                memcpy(out_texture, image_original, width * height * sizeof(RGB)); 
             }
             else
             {
@@ -252,7 +252,7 @@ void gray_scale_switch(void)
 
             // history managment
             fptr = &grayscale;
-            history_push(&history, fptr, height, width, out_texture, strength);
+            history_push(&history, fptr, height, width, out_texture, strength, is_png);
 
             texture_needs_update = true;
         }
@@ -261,7 +261,7 @@ void gray_scale_switch(void)
             grayscale(height, width, out_texture, strength, is_png);
             // history managment
             fptr = &grayscale;
-            history_push(&history, fptr, height, width, out_texture, strength);
+            history_push(&history, fptr, height, width, out_texture, strength, is_png);
             
             texture_needs_update = true;                    
         }
@@ -299,7 +299,7 @@ void sepia_switch(void)
 
             // history managment
             fptr = &sepia;
-            history_push(&history, fptr, height, width, out_texture, strength);
+            history_push(&history, fptr, height, width, out_texture, strength, is_png);
 
             texture_needs_update = true;
         }
@@ -311,7 +311,7 @@ void sepia_switch(void)
             
             // History managment
             fptr = &sepia;
-            history_push(&history, fptr, height, width, out_texture, strength);
+            history_push(&history, fptr, height, width, out_texture, strength, is_png);
 
             texture_needs_update = true;
             
