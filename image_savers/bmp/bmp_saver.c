@@ -47,7 +47,7 @@ void save_as_bmp(char *dest_name, char *src_name,
         
         bi.biSize = 40;
         bi.biWidth = width;
-        bi.biHeight = height; 
+        bi.biHeight = (int) -height; 
         bi.biPlanes = 1;
         bi.biBitCount = bytes_per_pixel * 8;
         bi.biCompression = 0;
@@ -67,7 +67,7 @@ void save_as_bmp(char *dest_name, char *src_name,
     // Pixelek kiirasa (Visszafele haladunk, hogy ne legyen fejjel lefele a kep)
     uint8_t *row_buffer = malloc(width * bytes_per_pixel);
 
-    for (int i = height - 1; i >= 0; i--)
+    for (int i = 0; i < height; i++)
     {
         uint8_t *row_ptr = image + (i * width * bytes_per_pixel);
 
